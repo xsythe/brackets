@@ -22,6 +22,7 @@ define(function main(require, exports, module) {
     var DocumentManager = require("document/DocumentManager");
     var LiveDevelopment = require("LiveDevelopment/LiveDevelopment");
     var Inspector = require("LiveDevelopment/Inspector/Inspector");
+    var Dialogs = require("widgets/Dialogs");
 
     var config = {
         debug: true, // enable debug output and helpers
@@ -72,11 +73,20 @@ define(function main(require, exports, module) {
     function _setupGoLiveButton() {
         _btnGoLive = $("<a href=\"#\">Go Live </a>");
         $(".nav").append($("<li>").append(_btnGoLive));
-        _btnGoLive.click(function onGoLive() {
+        _btnGoLive.click(function onGoLive(event) {
             if (LiveDevelopment.status > 0) {
                 LiveDevelopment.close();
             } else {
-                LiveDevelopment.open();
+                if (event.altKey) {
+                    Dialogs.showModalDialog("prompt-dialog", "Start Live Development", "Live URL for this file:")
+                        .done(function (id, dlg) {
+                            if (id === Dialogs.DIALOG_BTN_OK) {
+                                LiveDevelopment.open($("#prompt-input", dlg).val());
+                            }
+                        });
+                } else {
+                    LiveDevelopment.open();
+                }
             }
         });
         $(LiveDevelopment).on("statusChange", function statusChange(event, status) {

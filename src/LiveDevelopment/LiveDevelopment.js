@@ -52,7 +52,7 @@ define(function LiveDevelopment(require, exports, module) {
         "console": require("LiveDevelopment/Agents/ConsoleAgent"),
         "remote": require("LiveDevelopment/Agents/RemoteAgent"),
         "network": require("LiveDevelopment/Agents/NetworkAgent"),
-        "dom": require("LiveDevelopment/Agents/DOMAgent"),
+//        "dom": require("LiveDevelopment/Agents/DOMAgent"),
         "css": require("LiveDevelopment/Agents/CSSAgent")
         /* FUTURE 
         "script": require("LiveDevelopment/Agents/ScriptAgent"),
@@ -182,11 +182,52 @@ define(function LiveDevelopment(require, exports, module) {
     }
 
     /** Open the Connection and go live */
-    function open() {
+    function open(url) {
         var doc = _getCurrentDocument();
         var browserStarted = false;
         var retryCount = 0;
                 
+        function onConnectDone() {
+            Inspector.Page.enable();
+            Inspector.Page.reload();
+        }
+            
+        function onConnectFail(err) {
+            if (err === "CANCEL") {
+                return;
+            }
+            if (retryCount > 4) {
+                // TODO (task 4.7): Alert user that a debugging connection could not be established
+                // TODO (task 4.8): Restart Chrome (if user requested a restart)
+                console.log("Timed out trying to make debugging connection.");
+                _setStatus(-1);
+                return;
+            }
+            retryCount++;
+            
+            if (!browserStarted) {
+                NativeApp.openLiveBrowser(
+                    url || doc.root.url
+                )
+                    .done(function () {
+                        browserStarted = true;
+                    })
+                    .fail(function (err) {
+                        // TODO (task 4.7): Error reporting. Err could be NOT_FOUND_ERR or SECURITY_ERR
+                        console.log("Error launching browser");
+                        _setStatus(-1);
+                    });
+            }
+            
+            if (exports.status !== -1) {
+                setTimeout(function retryConnect() {
+                    Inspector.connectToURL(url || doc.root.url)
+                        .done(onConnectDone)
+                        .fail(onConnectFail);
+                }, 500);
+            }
+        }
+        
         if (doc && doc.root) {
             // For Sprint 6, we only open live development connections for HTML files
             // FUTURE: Remove this test when we support opening connections for different
@@ -196,39 +237,9 @@ define(function LiveDevelopment(require, exports, module) {
             }
             
             _setStatus(1);
-            Inspector.connectToURL(doc.root.url).fail(function onConnectFail(err) {
-                if (err === "CANCEL") {
-                    return;
-                }
-                if (retryCount > 4) {
-                    // TODO (task 4.7): Alert user that a debugging connection could not be established
-                    // TODO (task 4.8): Restart Chrome (if user requested a restart)
-                    console.log("Timed out trying to make debugging connection.");
-                    _setStatus(-1);
-                    return;
-                }
-                retryCount++;
-                
-                if (!browserStarted) {
-                    NativeApp.openLiveBrowser(
-                        doc.root.url
-                    )
-                        .done(function () {
-                            browserStarted = true;
-                        })
-                        .fail(function (err) {
-                            // TODO (task 4.7): Error reporting. Err could be NOT_FOUND_ERR or SECURITY_ERR
-                            console.log("Error launching browser");
-                            _setStatus(-1);
-                        });
-                }
-                
-                if (exports.status !== -1) {
-                    setTimeout(function retryConnect() {
-                        Inspector.connectToURL(doc.root.url).fail(onConnectFail);
-                    }, 500);
-                }
-            });
+            Inspector.connectToURL(url || doc.root.url)
+                .done(onConnectDone)
+                .fail(onConnectFail);
         }
     }
 
