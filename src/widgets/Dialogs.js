@@ -37,45 +37,54 @@ define(function (require, exports, module) {
     var _handleKeyDown = function (e) {
         var primaryBtn = this.find(".primary"),
             buttonId = null,
-            which = String.fromCharCode(e.which);
+            which = String.fromCharCode(e.which),
+            handled = false;
         
         if (e.which === 13) {
             // Click primary button
             if (primaryBtn) {
                 buttonId = primaryBtn.attr("data-button-id");
             }
+            handled = true;
         } else if (e.which === 32) {
             // Space bar on focused button
             this.find(".dialog-button:focus").click();
+            handled = true;
         } else if (brackets.platform === "mac") {
             // CMD+D Don't Save
             if (e.metaKey && (which === 'D')) {
                 if (_hasButton(this, DIALOG_BTN_DONTSAVE)) {
                     buttonId = DIALOG_BTN_DONTSAVE;
+                    handled = true;
                 }
             // FIXME (issue #418) CMD+. Cancel swallowed by native shell
             } else if (e.metaKey && (e.which === 190)) {
                 buttonId = DIALOG_BTN_CANCEL;
+                handled = true;
             }
         } else { // if (brackets.platform === "win") {
             // 'N' Don't Save
             if (which === 'N') {
                 if (_hasButton(this, DIALOG_BTN_DONTSAVE)) {
                     buttonId = DIALOG_BTN_DONTSAVE;
+                    handled = true;
                 }
             }
         }
         
-        if (buttonId) {
-            _dismissDialog(this, buttonId);
-        } else if (!($.contains(this.get(0), e.target)) ||
-                  (this.filter(":input").length === 0)) {
-            // Stop the event if the target is not inside the dialog
+        if (handled ||
+                !($.contains(this.get(0), e.target)) ||
+                !$(e.target).is(":input")) {
+            // Stop the event if we handled it, if the target is not inside the dialog
             // or if the target is not a form element.
             // TODO (issue #414): more robust handling of dialog scoped
             //                    vs. global key bindings
             e.stopPropagation();
             e.preventDefault();
+        }
+        
+        if (buttonId) {
+            _dismissDialog(this, buttonId);
         }
     };
     
@@ -90,9 +99,9 @@ define(function (require, exports, module) {
      * @param {string} title The title of the error dialog. Can contain HTML markup.
      * @param {string} message The message to display in the error dialog. Can contain HTML markup.
      * @return {Deferred} a $.Deferred() that will be resolved with the ID of the clicked button when the dialog
-     *     is dismissed. Never rejected.
+     *     is dismissed and the dialog instance. Never rejected.
      */
-    function showModalDialog(dlgClass, title, message, callback) {
+    function showModalDialog(dlgClass, title, message) {
         var result = $.Deferred();
         
         // We clone the HTML rather than using it directly so that if two dialogs of the same
@@ -122,7 +131,7 @@ define(function (require, exports, module) {
             // if the handler we're triggering might show another dialog (as long as there's no
             // fade-out animation)
             setTimeout(function () {
-                result.resolve(buttonId);
+                result.resolve(buttonId, dlg);
             }, 0);
             
             // Remove the dialog instance from the DOM.
@@ -132,11 +141,15 @@ define(function (require, exports, module) {
             document.body.removeEventListener("keydown", handleKeyDown, true);
             KeyBindingManager.setEnabled(true);
         }).one("shown", function () {
-            // Set focus to the default button
-            var primaryBtn = dlg.find(".primary");
-
-            if (primaryBtn) {
-                primaryBtn.focus();
+            // Set focus to the focus-tagged element, or the default button if none specified
+            var focused = dlg.find(".dialog-focus");
+            if (focused) {
+                focused.focus();
+            } else {
+                var primaryBtn = dlg.find(".primary");
+                if (primaryBtn) {
+                    primaryBtn.focus();
+                }
             }
 
             // Listen for dialog keyboard shortcuts
@@ -155,11 +168,11 @@ define(function (require, exports, module) {
             show: true,
             keyboard: true
         });
-        return result;
+        return result.promise();
     }
     
     /**
-     * Immediately closes any dialog instances with the given class. The dialog callback for each instance will 
+     * Immediately closes any dialog instances with the given class. The dialog result promise for each instance will 
      * be called with the special buttonId DIALOG_CANCELED (note: callback is run asynchronously).
      */
     function cancelModalDialogIfOpen(dlgClass) {
