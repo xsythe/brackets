@@ -7,6 +7,34 @@
     <meta charset="utf-8">
     <title>Brackets</title>
 
+    
+    <!-- Uncomment this for pure CSS lion-style scrollbars in the sidebar
+         (note these do *not* auto-hide)
+    -->
+    <style>
+        
+        .fake-lionbar ::-webkit-scrollbar {
+            width: 7px;
+            height: 7px;
+        }
+
+        .fake-lionbar ::-webkit-scrollbar-thumb {
+            border-radius: 4px;
+            background-color: rgba(0,0,0,0);
+        }​​​
+        
+        .fake-lionbar ::-webkit-scrollbar-corner {
+            -webkit-appearance: none;
+        }
+        
+        .fake-lionbar #open-files-container:hover::-webkit-scrollbar-thumb, 
+        .fake-lionbar #project-files-container:hover::-webkit-scrollbar-thumb {
+            background-color: rgba(0,0,0,0.4);
+            -webkit-transition: background-color .75s linear;
+        }
+    </style>
+    <!-- -->
+    
     <!-- CSS/LESS -->
 
     <!-- CSS for CodeMirror search support, currently for debugging only -->
@@ -29,24 +57,6 @@
     
     <!-- All other scripts are loaded through require. -->
     <script src="thirdparty/require.js" data-main="brackets"></script>
-
-    <style>
-        
-        .sidebar ::-webkit-scrollbar {
-            width: 7px;
-            height: 7px;
-        }
-        
-        .sidebar ::-webkit-scrollbar-thumb {
-            border-radius: 4px;
-            background-color: rgba(0,0,0,.4);
-        }​​​
-        
-        .sidebar ::-webkit-scrollbar-corner {
-            -webkit-appearance: none;
-        }
-
-    </style>
 </head>
 <body>
     <!-- Top bar for menus -->
