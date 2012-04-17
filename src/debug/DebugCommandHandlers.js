@@ -17,7 +17,7 @@ define(function (require, exports, module) {
     function _handleEnableJSLint() {
         JSLintUtils.setEnabled(!JSLintUtils.getEnabled());
         JSLintUtils.run();
-        $("#jslint-enabled-checkbox").css("display", JSLintUtils.getEnabled() ? "" : "none");
+        $("#menu-debug-jslint").toggleClass("selected", JSLintUtils.getEnabled());
     }
     
     // Implements the 'Run Tests' menu to bring up the Jasmine unit test window
@@ -101,10 +101,10 @@ define(function (require, exports, module) {
         var currentWidth = $(".sidebar").width();
         if (currentWidth > 0) {
             $(".sidebar").width(0);
-            $("#menu-debug-hide-sidebar").text("Show Sidebar");
+            $("#menu-view-hide-sidebar span").first().text("Show Sidebar");
         } else {
             $(".sidebar").width(200);
-            $("#menu-debug-hide-sidebar").text("Hide Sidebar");
+            $("#menu-view-hide-sidebar span").first().text("Hide Sidebar");
         }
         
     }
