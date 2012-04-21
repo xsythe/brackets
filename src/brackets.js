@@ -255,6 +255,12 @@ define(function (require, exports, module) {
             "extensions/user"
         );
 
+        // Set fake lionbars if we aren't on lion
+        var osxMatch = /Mac OS X 10\D([\d+])\D/.exec(navigator.userAgent);
+        if (!(osxMatch && osxMatch[1] && Number(osxMatch[1]) >= 7)) {
+            $(".sidebar").addClass("fake-lionbar");
+        }
+
         PerfUtils.addMeasurement("Application Startup");
     });
     
