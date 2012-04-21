@@ -546,11 +546,12 @@ define(function (require, exports, module) {
                 for (change = changeList; change; change = change.next) {
                     // If the change only affects the current line, just recompute the width of that line. Otherwise,
                     // scan all the lines to figure out the new widest line.
-                    if (change.from.line === change.to.line && change.from.line === _maxVisibleLineInfo.num && change.newText.length === 1) {
+                    if (change.from.line === change.to.line &&
+                            change.from.line === this._maxVisibleLineInfo.num &&
+                            change.newText.length === 1) {
                         recomputeLineOnly = true;
-                        newLength = newText[0].length;
-                    }
-                    else {
+                        newLength = change.newText[0].length;
+                    } else {
                         recomputeLineOnly = false;
                         break;
                     }
