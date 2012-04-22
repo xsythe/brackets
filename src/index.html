@@ -14,13 +14,21 @@
     <style>
         
         .fake-lionbar ::-webkit-scrollbar {
-            width: 7px;
-            height: 7px;
+            width: 11px;
+            height: 11px;
         }
 
         .fake-lionbar ::-webkit-scrollbar-thumb {
-            border-radius: 4px;
             background-color: rgba(0,0,0,0);
+            background-clip: content-box;
+            border-radius: 999px;
+            border: 2px solid transparent;
+        }​​​
+
+        .fake-lionbar ::-webkit-scrollbar-track {
+            background-color: rgba(0,0,0,0);
+            border-radius: 999px;
+            border: 2px solid transparent;
         }​​​
         
         .fake-lionbar ::-webkit-scrollbar-corner {
@@ -29,8 +37,9 @@
         
         .fake-lionbar #open-files-container:hover::-webkit-scrollbar-thumb, 
         .fake-lionbar #project-files-container:hover::-webkit-scrollbar-thumb {
-            background-color: rgba(0,0,0,0.4);
+            box-shadow: 0 0 0 6px rgba(0,0,0,.4) inset;
             -webkit-transition: background-color .75s linear;
+        }
         }
     </style>
     <!-- -->
