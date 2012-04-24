@@ -373,7 +373,6 @@ define(function (require, exports, module) {
                 }
             });
             this.setCursorPos(range.startLine, 0);
-            this._recomputeMaxLine();
         }
 
         // Now that we're fully initialized, we can point the document back at us if needed
@@ -544,11 +543,14 @@ define(function (require, exports, module) {
         if (this._visibleRange) {
             if (this._maxVisibleLineInfo) {
                 for (change = changeList; change; change = change.next) {
-                    // If the change only affects the current line, just recompute the width of that line. Otherwise,
-                    // scan all the lines to figure out the new widest line.
+                    // If the change only affects the current line, just recompute the width of that line. 
+                    // Otherwise, scan all the lines to figure out the new widest line.
+                    // Note that we don't have to worry about the fact that line numbers might
+                    // shift due to one of the changes, since we always abort and rescan everything
+                    // if any change affects something other than the current line.
                     if (change.from.line === change.to.line &&
                             change.from.line === this._maxVisibleLineInfo.num &&
-                            change.newText.length === 1) {
+                            change.text.length === 1) {
                         recomputeLineOnly = true;
                         newLength = change.newText[0].length;
                     } else {

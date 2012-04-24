@@ -89,6 +89,7 @@ define(function (require, exports, module) {
         // Bind event handlers
         this._updateRelatedContainer = this._updateRelatedContainer.bind(this);
         this._ensureCursorVisible = this._ensureCursorVisible.bind(this);
+        this._updateEditorWidth = this._updateEditorWidth.bind(this);
         this._onClick = this._onClick.bind(this);
 
         // Create DOM to hold editors and related list
@@ -195,7 +196,8 @@ define(function (require, exports, module) {
         this.$editorsDiv.children().remove();
 
         // Add new editor
-        var rule = this.getSelectedRule();
+        var rule = this.getSelectedRule(),
+            self = this;
         this.createInlineEditorFromText(rule.textRange.document, rule.textRange.startLine, rule.textRange.endLine, this.$editorsDiv.get(0));
         this.editors[0].focus();
 
@@ -208,6 +210,10 @@ define(function (require, exports, module) {
         // Cursor activity in the inline editor may cause us to horizontally scroll.
         $(this.editors[0]).on("cursorActivity", this._ensureCursorVisible);
 
+        // If the desired width of the editor changes, resize to fit the content.
+        $(this.editors[0]).on("desiredWidthChange", function () {
+            self._updateEditorWidth();
+        });
         
         this.editors[0].refresh();
         // ensureVisibility is set to false because we don't want to scroll the main editor when the user selects a view
@@ -215,7 +221,6 @@ define(function (require, exports, module) {
         this._updateRelatedContainer();
 
         // scroll the selection to the ruleItem, use setTimeout to wait for DOM updates
-        var self = this;
         setTimeout(function () {
             var containerHeight = self.$relatedContainer.height(),
                 itemTop = $ruleItem.position().top,
@@ -239,6 +244,8 @@ define(function (require, exports, module) {
                     self.$relatedContainer.scrollTop(itemBottom - containerHeight);
                 }
             }
+            
+            self._updateEditorWidth();
         }, 0);
     };
 
@@ -291,6 +298,10 @@ define(function (require, exports, module) {
                 }
             }
         }
+    };
+    
+    CSSInlineEditor.prototype._updateEditorWidth = function () {
+        this.$editorsDiv.width(this.editors[0].getDesiredWidth());
     };
     
     /**
