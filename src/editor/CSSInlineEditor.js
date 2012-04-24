@@ -199,6 +199,16 @@ define(function (require, exports, module) {
         var rule = this.getSelectedRule(),
             self = this;
         this.createInlineEditorFromText(rule.textRange.document, rule.textRange.startLine, rule.textRange.endLine, this.$editorsDiv.get(0));
+        
+        // Set the container of the editor to be float: left. This is a bit of a hack: it makes it
+        // so that the container's width is the full width of the CodeMirror editor's content, and
+        // therefore CodeMirror never thinks it needs to scroll. We need this because we want to
+        // artificially set the width of the $editorsDiv to fit the longest line in the visible range
+        // (as opposed to the longest line in the editor's content), and we want to do this without
+        // allowing the embedded editor to do its own scrolling. By letting it be its natural width,
+        // we make it so it thinks it never needs to scroll horizontally.
+        $(this.editors[0].getRootElement()).parent().css("float", "left");
+        
         this.editors[0].focus();
 
         // Changes in size to the inline editor should update the relatedContainer
@@ -259,6 +269,7 @@ define(function (require, exports, module) {
         $(this.hostEditor).off("change", this._updateRelatedContainer);
         $(this.editors[0]).off("change", this._updateRelatedContainer);
         $(this.editors[0]).off("cursorActivity", this._ensureCursorVisible);
+        $(this.editors[0]).off("desiredWidthChange", this._updateEditorWidth);
         $(this).off("offsetTopChanged", this._updateRelatedContainer);
         $(window).off("resize", this._updateRelatedContainer);
         
@@ -301,7 +312,7 @@ define(function (require, exports, module) {
     };
     
     CSSInlineEditor.prototype._updateEditorWidth = function () {
-        this.$editorsDiv.width(this.editors[0].getDesiredWidth());
+        this.$editorsDiv.width(Math.max(this.editors[0].getDesiredWidth(), this.$htmlContent.width()));
     };
     
     /**

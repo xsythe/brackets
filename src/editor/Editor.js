@@ -481,6 +481,38 @@ define(function (require, exports, module) {
         }
     };
     
+    Editor.prototype._checkMaxWidth = function (changeList) {
+        var recomputeLineOnly = false, change;
+                        
+        // Whenever the document is being changed (even if it's due to our own editor), check if we
+        // need to update the maximum line width.
+        if (this._visibleRange) {
+            if (this._maxVisibleLineInfo) {
+                for (change = changeList; change; change = change.next) {
+                    // If the change only affects the current line, just recompute the width of that line. 
+                    // Otherwise, scan all the lines to figure out the new widest line.
+                    // Note that we don't have to worry about the fact that line numbers might
+                    // shift due to one of the changes, since we always abort and rescan everything
+                    // if any change affects something other than the current line.
+                    if (change.from.line === change.to.line &&
+                            change.from.line === this._maxVisibleLineInfo.num &&
+                            change.text.length === 1) {
+                        recomputeLineOnly = true;
+                    } else {
+                        recomputeLineOnly = false;
+                        break;
+                    }
+                }
+            }
+            if (recomputeLineOnly) {
+                this._maxVisibleLineInfo.width = this._getLineRightEdge(this._maxVisibleLineInfo.num);
+            } else {
+                this._maxVisibleLineInfo = null;
+            }
+            $(this).triggerHandler("desiredWidthChange");
+        }
+    };
+    
     /**
      * Responds to changes in the CodeMirror editor's text, syncing the changes to the Document.
      * There are several cases where we want to ignore a CodeMirror change:
@@ -494,6 +526,8 @@ define(function (require, exports, module) {
         if (this._duringSync) {
             return;
         }
+        
+        this._checkMaxWidth(changeList);
         
         // Secondary editor: force creation of "master" editor backing the model, if doesn't exist yet
         if (!this.document._masterEditor) {
@@ -536,41 +570,12 @@ define(function (require, exports, module) {
      *    the document an editor change that originated with us
      */
     Editor.prototype._handleDocumentChange = function (event, doc, changeList) {
-        var recomputeLineOnly = false, newLength, change;
-        
-        // Whenever the document is being changed (even if it's due to our own editor), check if we
-        // need to update the maximum line width.
-        if (this._visibleRange) {
-            if (this._maxVisibleLineInfo) {
-                for (change = changeList; change; change = change.next) {
-                    // If the change only affects the current line, just recompute the width of that line. 
-                    // Otherwise, scan all the lines to figure out the new widest line.
-                    // Note that we don't have to worry about the fact that line numbers might
-                    // shift due to one of the changes, since we always abort and rescan everything
-                    // if any change affects something other than the current line.
-                    if (change.from.line === change.to.line &&
-                            change.from.line === this._maxVisibleLineInfo.num &&
-                            change.text.length === 1) {
-                        recomputeLineOnly = true;
-                        newLength = change.newText[0].length;
-                    } else {
-                        recomputeLineOnly = false;
-                        break;
-                    }
-                }
-            }
-            if (recomputeLineOnly) {
-                this._maxVisibleLineInfo.width = this._getLineRightEdge(this._maxVisibleLineInfo.num, newLength);
-            } else {
-                this._recomputeMaxLine();
-            }
-            $(this).triggerHandler("desiredWidthChange");
-        }
-        
         // we're currently syncing to the Document, so don't echo back FROM the Document
         if (this._duringSync) {
             return;
         }
+        
+        this._checkMaxWidth(changeList);
         
         if (this.document._masterEditor !== this) {
             // Secondary editor:
@@ -942,12 +947,12 @@ define(function (require, exports, module) {
     };
     
     /**
-     * Returns the right edge of the given line, assuming it has the given length.
+     * Returns the right edge of the given line.
      * @param {number} num The line number to measure.
-     * @param {length} length The length of that line.
      */
-    Editor.prototype._getLineRightEdge = function (num, length) {
-        return this._codeMirror.charCoords({line: num, ch: length}).x - $(this.getRootElement()).offset().left;
+    Editor.prototype._getLineRightEdge = function (num) {
+        var lineLen = this.getLineText(num).length;
+        return this._codeMirror.charCoords({line: num, ch: lineLen}).x - $(this.getRootElement()).offset().left;
     };
     
     /**
@@ -965,7 +970,7 @@ define(function (require, exports, module) {
                 maxLineNum = i;
             }
         }
-        this._maxVisibleLineInfo = { num: maxLineNum, width: this._getLineRightEdge(maxLineNum, maxLength) };
+        this._maxVisibleLineInfo = { num: maxLineNum, width: this._getLineRightEdge(maxLineNum) };
     };
     
     /**
