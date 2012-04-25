@@ -575,8 +575,6 @@ define(function (require, exports, module) {
             return;
         }
         
-        this._checkMaxWidth(changeList);
-        
         if (this.document._masterEditor !== this) {
             // Secondary editor:
             // we're not the ground truth; and if we got here, this was a Document change that
@@ -585,6 +583,8 @@ define(function (require, exports, module) {
             this._duringSync = true;
             this._applyChanges(changeList);
             this._duringSync = false;
+
+            this._checkMaxWidth(changeList);
         }
         // Else, Master editor:
         // we're the ground truth; nothing to do since Document change is just echoing our
@@ -949,9 +949,10 @@ define(function (require, exports, module) {
     /**
      * Returns the right edge of the given line.
      * @param {number} num The line number to measure.
+     * @param {number} length The length of that line; if unspecified, we'll get it from the editor.
      */
-    Editor.prototype._getLineRightEdge = function (num) {
-        var lineLen = this.getLineText(num).length;
+    Editor.prototype._getLineRightEdge = function (num, length) {
+        var lineLen = (length !== undefined ? length : this.getLineText(num).length);
         return this._codeMirror.charCoords({line: num, ch: lineLen}).x - $(this.getRootElement()).offset().left;
     };
     
@@ -970,7 +971,7 @@ define(function (require, exports, module) {
                 maxLineNum = i;
             }
         }
-        this._maxVisibleLineInfo = { num: maxLineNum, width: this._getLineRightEdge(maxLineNum) };
+        this._maxVisibleLineInfo = { num: maxLineNum, width: this._getLineRightEdge(maxLineNum, maxLength) };
     };
     
     /**
