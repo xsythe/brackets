@@ -332,7 +332,7 @@ define(function (require, exports, module) {
     };
     
     CSSInlineEditor.prototype._updateEditorWidth = function () {
-        this.$editorsDiv.width(Math.max(this.editors[0].getDesiredWidth(), this.$htmlContent.width()));
+        this.$editorsDiv.width(Math.max(this.editors[0].getDesiredWidth(), this.hostEditor.getScrollerElement().clientWidth - this.$relatedContainer.outerWidth()));
     };
     
     /**
