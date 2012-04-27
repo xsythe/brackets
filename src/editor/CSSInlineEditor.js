@@ -216,8 +216,7 @@ define(function (require, exports, module) {
         this.$editorsDiv.children().remove();
 
         // Add new editor
-        var rule = this.getSelectedRule(),
-            self = this;
+        var rule = this.getSelectedRule();
         this.createInlineEditorFromText(rule.textRange.document, rule.textRange.startLine, rule.textRange.endLine, this.$editorsDiv.get(0));
         
         // Set the container of the editor to be float: left. This is a bit of a hack: it makes it
@@ -247,6 +246,7 @@ define(function (require, exports, module) {
         this._updateRelatedContainer();
 
         // scroll the selection to the ruleItem, use setTimeout to wait for DOM updates
+        var self = this;
         setTimeout(function () {
             var containerHeight = self.$relatedContainer.height(),
                 itemTop = $ruleItem.position().top,
