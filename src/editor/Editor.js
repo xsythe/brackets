@@ -499,35 +499,17 @@ define(function (require, exports, module) {
         }
     };
     
-    Editor.prototype._checkMaxWidth = function (changeList) {
-        var recomputeLineOnly = false, change;
+    Editor.prototype._checkMaxWidth = function () {
+        var oldWidth;
                         
         // Whenever the document is being changed (even if it's due to our own editor), check if we
         // need to update the maximum line width.
         if (this._visibleRange) {
-            if (this._maxVisibleLineInfo) {
-                for (change = changeList; change; change = change.next) {
-                    // If the change only affects the current line, just recompute the width of that line. 
-                    // Otherwise, scan all the lines to figure out the new widest line.
-                    // Note that we don't have to worry about the fact that line numbers might
-                    // shift due to one of the changes, since we always abort and rescan everything
-                    // if any change affects something other than the current line.
-                    if (change.from.line === change.to.line &&
-                            change.from.line === this._maxVisibleLineInfo.num &&
-                            change.text.length === 1) {
-                        recomputeLineOnly = true;
-                    } else {
-                        recomputeLineOnly = false;
-                        break;
-                    }
-                }
+            oldWidth = this._maxWidthInfo ? this._maxWidthInfo.width : -1;
+            this._recomputeMaxWidth();
+            if (this._maxWidthInfo.width !== oldWidth) {
+                $(this).triggerHandler("desiredWidthChange");
             }
-            if (recomputeLineOnly) {
-                this._maxVisibleLineInfo.width = this._getLineRightEdge(this._maxVisibleLineInfo.num);
-            } else {
-                this._maxVisibleLineInfo = null;
-            }
-            $(this).triggerHandler("desiredWidthChange");
         }
     };
     
@@ -545,7 +527,7 @@ define(function (require, exports, module) {
             return;
         }
         
-        this._checkMaxWidth(changeList);
+        this._checkMaxWidth();
         
         // Secondary editor: force creation of "master" editor backing the model, if doesn't exist yet
         if (!this.document._masterEditor) {
@@ -602,7 +584,7 @@ define(function (require, exports, module) {
             this._applyChanges(changeList);
             this._duringSync = false;
 
-            this._checkMaxWidth(changeList);
+            this._checkMaxWidth();
         }
         // Else, Master editor:
         // we're the ground truth; nothing to do since Document change is just echoing our
@@ -977,11 +959,12 @@ define(function (require, exports, module) {
     /**
      * Recalculates the desired width of the editor based on the widest visible line.
      */
-    Editor.prototype._recomputeMaxLine = function () {
-        var i, lineLength, maxLineNum = -1, maxLength = -1;
+    Editor.prototype._recomputeMaxWidth = function () {
         if (!this._visibleRange) {
             return;
         }
+
+        var i, lineLength, maxLineNum = -1, maxLength = -1;
         for (i = this._visibleRange.startLine; i <= this._visibleRange.endLine; i++) {
             lineLength = this.getLineText(i).length;
             if (lineLength > maxLength) {
@@ -989,7 +972,7 @@ define(function (require, exports, module) {
                 maxLineNum = i;
             }
         }
-        this._maxVisibleLineInfo = { num: maxLineNum, width: this._getLineRightEdge(maxLineNum, maxLength) };
+        this._maxWidthInfo = { num: maxLineNum, width: this._getLineRightEdge(maxLineNum, maxLength) };
     };
     
     /**
@@ -1002,10 +985,10 @@ define(function (require, exports, module) {
         if (!this._visibleRange) {
             return null;
         }
-        if (!this._maxVisibleLineInfo) {
-            this._recomputeMaxLine();
+        if (!this._maxWidthInfo) {
+            this._recomputeMaxWidth();
         }
-        return this._maxVisibleLineInfo.width;
+        return this._maxWidthInfo.width;
     };
     
     /**
@@ -1046,7 +1029,7 @@ define(function (require, exports, module) {
      * @private
      * @type {{num: number, width: number}}
      */
-    Editor.prototype._maxVisibleLineInfo = null;
+    Editor.prototype._maxWidthInfo = null;
         
     
     // Global settings that affect all Editor instances (both currently open Editors as well as those created
