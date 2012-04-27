@@ -330,6 +330,9 @@ define(function (require, exports, module) {
      * Set the inline editor container to the desired width of the currently visible editor.
      */
     CSSInlineEditor.prototype._updateEditorWidth = function () {
+        // If the editor's desired width is shorter than the actual width of the overall editor area,
+        // set it to the full editor area width, so that clicks in the dead space are handled by the
+        // editor.
         this.$editorsDiv.width(Math.max(this.editors[0].getDesiredWidth(),
                                         this.hostEditor.getScrollerElement().clientWidth - this.$relatedContainer.outerWidth()));
         this._ensureCursorVisible();
