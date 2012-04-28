@@ -507,7 +507,7 @@ define(function (require, exports, module) {
         if (this._visibleRange) {
             oldWidth = this._maxWidthInfo ? this._maxWidthInfo.width : -1;
             this._recomputeMaxWidth();
-            if (this._maxWidthInfo.width !== oldWidth) {
+            if (this._maxWidthInfo && this._maxWidthInfo.width !== oldWidth) {
                 $(this).triggerHandler("desiredWidthChange");
             }
         }
@@ -526,8 +526,6 @@ define(function (require, exports, module) {
         if (this._duringSync) {
             return;
         }
-        
-        this._checkMaxWidth();
         
         // Secondary editor: force creation of "master" editor backing the model, if doesn't exist yet
         if (!this.document._masterEditor) {
@@ -550,7 +548,9 @@ define(function (require, exports, module) {
         // we're the ground truth; nothing else to do, since Document listens directly to us
         // note: this change might have been a real edit made by the user, OR this might have
         // been a change synced from another editor
-        
+
+        this._checkMaxWidth();
+
         if (this._visibleRange) {
             // _visibleRange has already updated via its own Document listener, when we pushed our
             // change into the Document above (_masterEditor._applyChanges()). But changes due to our
@@ -960,7 +960,7 @@ define(function (require, exports, module) {
      * Recalculates the desired width of the editor based on the widest visible line.
      */
     Editor.prototype._recomputeMaxWidth = function () {
-        if (!this._visibleRange) {
+        if (!this._visibleRange || this._visibleRange.startLine === null || this._visibleRange.endLine === null) {
             return;
         }
 
@@ -988,7 +988,7 @@ define(function (require, exports, module) {
         if (!this._maxWidthInfo) {
             this._recomputeMaxWidth();
         }
-        return this._maxWidthInfo.width;
+        return this._maxWidthInfo ? this._maxWidthInfo.width : 0;
     };
     
     /**
